@@ -1,0 +1,115 @@
+<html>
+<meta charset="UTF-8">
+
+<head>
+  <title>Jumper - js13k</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    #canvas {
+      background-color: #00ff00;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas>
+  </canvas>
+  <script>
+    var smiley = "🙂";
+    var fire = "🔥";
+    var canvas = document.querySelector('canvas');
+    function scaleCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    scaleCanvas();
+    var ctx = canvas.getContext('2d');
+    ctx.font = '20px Helvetica';
+    ctx.fillStyle = '#ffff00';
+    var state = {
+      hero: {
+        char: smiley,
+        x: 100,
+        y: 100,
+        vx: 1,
+        vy: 1,
+        angle: 0
+      }
+    };
+
+    function draw(text, endingX, centerY, angle) {
+      // https://stackoverflow.com/questions/28560842/rotating-multiple-texts-in-canvas
+      // save the starting context state (untransformed)
+      ctx.save();
+      // measure the pixel width of the text
+      var width = ctx.measureText(text).width;
+      // translate to the desired endpoint
+      ctx.translate(endingX, centerY);
+      // rotate to the desired angle
+      ctx.rotate(angle * Math.PI / 180);
+      // set the text baseline so the text 
+      // is vertically centered on the endpoint 
+      ctx.textBaseline = 'middle';
+      // draw the text offset by the negative width
+      // so the text ends at the desired endpoint
+      ctx.fillText(text, -width, 0);
+      // restore the context to its starting state
+      ctx.restore();
+    }
+
+    function clamp(min, val, max) {
+      return Math.max(min, Math.min(max, val))
+    }
+    var prevMouseX = innerWidth / 2;
+    var alpha = 0;
+    // MOUSE MOVE LISTENER - Listens for mouse movement and determines the closest line point
+    window.addEventListener('mousemove', function (e) {
+      deltaX = prevMouseX - e.pageX;
+      var alpha = state.hero.angle + deltaX;
+      alpha = clamp(-45, alpha, 45);
+      console.log(alpha);
+      // clamp
+      state.hero.angle = alpha
+      prevMouseX = e.pageX;
+      // e.pageY;
+    });
+
+
+    function gameStep() {
+      // clear canvas frame
+      ctx.clearRect(0, 0, innerWidth, innerHeight)
+      /*draw(fire, 100, 100, 45)
+      draw(smiley, 0, 0, 45)
+      draw(smiley, 200, 200, 45)
+      draw(fire, 100, 100, 90)*/
+      for (var key in state) {
+        /*if (data.hasOwnProperty(k)) {
+           user[k] = data[k];
+        }*/
+        obj = state[key];
+        //console.log(key, obj)
+        obj.x = obj.x + obj.vx
+        obj.y = obj.y + obj.vy
+        draw(obj.char, obj.x, obj.y, obj.angle)
+      }
+
+      // draw hero
+      //var index = 1
+      //ctx.save()
+      //ctx.fillText(smiley, index * 40 + 6, 45)
+      //ctx.restore()
+      //ctx.save()
+      //ctx.rotate(-Math.PI / 8)
+      //ctx.fillText(fire, index * 40 + 6, 45)
+      // /ctx.restore()
+      // make the game loop
+      window.requestAnimationFrame(gameStep)
+    }
+    gameStep()
+  </script>
+</body>
+
+</html>
