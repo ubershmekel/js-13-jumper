@@ -155,7 +155,12 @@
         state.hero.vx = vx
         debug(vmag)
       }
-      if (state.hero.x < leftX || state.hero.x > rightX) {
+      if (state.hero.x < leftX) {
+        state.hero.x = leftX
+        state.hero.vx = -state.hero.vx
+      }
+      if (state.hero.x > rightX) {
+        state.hero.x = rightX
         state.hero.vx = -state.hero.vx
       }
 
@@ -165,7 +170,7 @@
     }
 
     var then = Date.now();
-    var fixedTimeDelta = 0.01;
+    var fixedTimeDelta = 0.02;
     var fixedTimeDeltaMs = fixedTimeDelta * 1000;
     var timeRemainderMs = 0.0;
     function gameStep() {
