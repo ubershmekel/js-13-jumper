@@ -140,20 +140,24 @@
         }*/
         var obj = state[key];
         //console.log(key, obj)
-        if (obj.vx) {
+        if (obj.vx !== undefined) {
           obj.x = obj.x + obj.vx * fixedTimeDelta
           obj.y = obj.y + obj.vy * fixedTimeDelta
         }
         if (obj.gravity) {
           //obj.vy = clamp(-20, obj.vy + obj.gravity * fixedTimeDelta * 100, 20);
+          //console.log('bef', obj.y, obj.vy, obj.angle)
           obj.vy = obj.vy + obj.gravity * fixedTimeDelta * 100
+          //console.log('aft', obj.vy)
         }
         drawText(obj.char, obj.x, obj.y, obj.angle)
       }
 
+      //console.log('before', state.hero.angle, state.hero.y, state.hero.vy)
       if (state.hero.y > groundY) {
         state.hero.y = groundY
         var vmag = Math.sqrt(state.hero.vx * state.hero.vx + state.hero.vy * state.hero.vy)
+        //console.log(vmag)
         // round velocity magnitude to nearest 100 to get more consistent max jump height
         vmag = Math.round(vmag / 100) * 100
         //var vmag = 800
@@ -161,8 +165,9 @@
         var vx = Math.sin(state.hero.angle * Math.PI / 180) * vmag
         state.hero.vy = vy
         state.hero.vx = vx
-        debug(vmag)
       }
+      debug(state.hero.angle)
+      //console.log(state.hero.angle, state.hero.y, state.hero.vy)
       if (state.hero.x < leftX) {
         state.hero.x = leftX
         state.hero.vx = -state.hero.vx
