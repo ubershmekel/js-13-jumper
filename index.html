@@ -6,10 +6,11 @@
   <style>
     body {
       margin: 0;
+      background-color: rgb(92, 92, 255);
     }
 
-    #canvas {
-      background-color: #00ff00;
+    canvas {
+      background-color: rgb(255, 254, 177);
     }
   </style>
 </head>
@@ -18,29 +19,58 @@
   <canvas>
   </canvas>
   <script>
+    "use strict";
     var smiley = "🙂";
     var fire = "🔥";
+    var env = "✉️";
+    var walker = "🚶";
+    //var resistance = 0.9;
     var canvas = document.querySelector('canvas');
     function scaleCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = 800 // window.innerWidth;
+      canvas.height = 600 // window.innerHeight;
     }
     scaleCanvas();
     var ctx = canvas.getContext('2d');
     ctx.font = '20px Helvetica';
-    ctx.fillStyle = '#ffff00';
+    ctx.fillStyle = '#ff0000';
+    ctx.lineWidth = 6
+
     var state = {
       hero: {
-        char: smiley,
+        char: walker,
         x: 100,
-        y: 100,
+        y: 300,
         vx: 1,
         vy: 1,
-        angle: 0
+        gravity: 10,
+        angle: 45
+      },
+      fire1: {
+        char: fire,
+        x: 100,
+        y: 200,
+        angle: 10,
+      },
+      fire2: {
+        char: fire,
+        x: 200,
+        y: 100,
+        angle: 45,
+      },
+      env1: {
+        char: env,
+        x: 300,
+        y: 300,
+        angle: 0,
       }
     };
 
-    function draw(text, endingX, centerY, angle) {
+    var groundY = 500;
+    var rightX = 600;
+    var leftX = 50;
+
+    function drawText(text, endingX, centerY, angle) {
       // https://stackoverflow.com/questions/28560842/rotating-multiple-texts-in-canvas
       // save the starting context state (untransformed)
       ctx.save();
@@ -60,41 +90,107 @@
       ctx.restore();
     }
 
+    function drawLine(startX, startY, endX, endY) {
+      ctx.beginPath()
+      ctx.moveTo(startX, startY)
+      ctx.lineTo(endX, endY)
+      ctx.stroke()
+    }
+
     function clamp(min, val, max) {
       return Math.max(min, Math.min(max, val))
     }
+
+
     var prevMouseX = innerWidth / 2;
     var alpha = 0;
+    var debugText = '';
+    var heroSize = 18;
     // MOUSE MOVE LISTENER - Listens for mouse movement and determines the closest line point
     window.addEventListener('mousemove', function (e) {
-      deltaX = prevMouseX - e.pageX;
+      var deltaX = prevMouseX - e.pageX;
       var alpha = state.hero.angle + deltaX;
       alpha = clamp(-45, alpha, 45);
-      console.log(alpha);
+      //console.log(alpha);
       // clamp
       state.hero.angle = alpha
       prevMouseX = e.pageX;
       // e.pageY;
     });
+    
+    function debug(text) {
+      debugText = text;
+    }
 
-
-    function gameStep() {
+    function simulate() {
       // clear canvas frame
       ctx.clearRect(0, 0, innerWidth, innerHeight)
-      /*draw(fire, 100, 100, 45)
-      draw(smiley, 0, 0, 45)
-      draw(smiley, 200, 200, 45)
-      draw(fire, 100, 100, 90)*/
+      drawText(debugText, 400, 400, 0)
       for (var key in state) {
         /*if (data.hasOwnProperty(k)) {
            user[k] = data[k];
         }*/
-        obj = state[key];
+        var obj = state[key];
         //console.log(key, obj)
-        obj.x = obj.x + obj.vx
-        obj.y = obj.y + obj.vy
-        draw(obj.char, obj.x, obj.y, obj.angle)
+        if (obj.vx) {
+          obj.x = obj.x + obj.vx * fixedTimeDelta
+          obj.y = obj.y + obj.vy * fixedTimeDelta
+        }
+        if (obj.gravity) {
+          //obj.vy = clamp(-20, obj.vy + obj.gravity * fixedTimeDelta * 100, 20);
+          obj.vy = obj.vy + obj.gravity * fixedTimeDelta * 100
+        }
+        drawText(obj.char, obj.x, obj.y, obj.angle)
       }
+
+      if (state.hero.y > groundY) {
+        state.hero.y = groundY
+        var vmag = Math.sqrt(state.hero.vx * state.hero.vx + state.hero.vy * state.hero.vy)
+        // round velocity magnitude to nearest 100 to get more consistent max jump height
+        vmag = Math.round(vmag / 100) * 100
+        //var vmag = 800
+        var vy = -Math.cos(state.hero.angle * Math.PI / 180) * vmag
+        var vx = Math.sin(state.hero.angle * Math.PI / 180) * vmag
+        state.hero.vy = vy
+        state.hero.vx = vx
+        debug(vmag)
+      }
+      if (state.hero.x < leftX || state.hero.x > rightX) {
+        state.hero.vx = -state.hero.vx
+      }
+
+      drawLine(leftX - heroSize, groundY + heroSize, rightX, groundY + heroSize)
+      drawLine(leftX - heroSize, 0, leftX - heroSize, groundY + heroSize)
+      drawLine(rightX, 0, rightX, groundY + heroSize)
+    }
+
+    var then = Date.now();
+    var fixedTimeDelta = 0.01;
+    var fixedTimeDeltaMs = fixedTimeDelta * 1000;
+    var timeRemainderMs = 0.0;
+    function gameStep() {
+      // make the game loop
+      window.requestAnimationFrame(gameStep)
+
+      // Update physics by time, not frames, to avoid machine speed bugs
+      var now = Date.now();
+      var timeDeltaMs = now - then;
+      then = now;
+      //console.log(timeDeltaMs)
+      // Avoid strange things happening when you leave and re-enter the tab
+      // 10 ms = 100 fps, 100 ms = 10 fps
+      timeDeltaMs = clamp(10, timeDeltaMs, 100)
+      timeRemainderMs = timeRemainderMs + timeDeltaMs
+      while (timeRemainderMs >= fixedTimeDeltaMs) {
+        simulate()
+        timeRemainderMs = timeRemainderMs - fixedTimeDeltaMs
+      }
+
+      /*draw(fire, 100, 100, 45)
+      draw(smiley, 0, 0, 45)
+      draw(smiley, 200, 200, 45)
+      draw(fire, 100, 100, 90)*/
+
 
       // draw hero
       //var index = 1
@@ -105,8 +201,6 @@
       //ctx.rotate(-Math.PI / 8)
       //ctx.fillText(fire, index * 40 + 6, 45)
       // /ctx.restore()
-      // make the game loop
-      window.requestAnimationFrame(gameStep)
     }
     gameStep()
   </script>
