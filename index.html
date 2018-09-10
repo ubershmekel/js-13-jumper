@@ -32,7 +32,7 @@
     var fire = "🔥";
     var env = "✉️";
     var walker = "🚶";
-    //var resistance = 0.9;
+    var heroSize = 40;
     var canvas = document.querySelector('canvas');
     function scaleCanvas() {
       canvas.width = 800 // window.innerWidth;
@@ -40,9 +40,10 @@
     }
     scaleCanvas();
     var ctx = canvas.getContext('2d');
-    ctx.font = '20px Helvetica';
+    ctx.font = heroSize + 'px Helvetica';
     ctx.fillStyle = '#ff0000';
-    ctx.lineWidth = 6
+    // stroke width
+    ctx.lineWidth = 4
 
     var state = {
       hero: {
@@ -75,6 +76,7 @@
     };
 
     var groundY = 500;
+    var topY = 0;
     var rightX = 600;
     var leftX = 50;
 
@@ -90,10 +92,12 @@
       ctx.rotate(angle * Math.PI / 180);
       // set the text baseline so the text 
       // is vertically centered on the endpoint 
-      ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'bottom';
+      ctx.textAlign = 'left';
+
       // draw the text offset by the negative width
       // so the text ends at the desired endpoint
-      ctx.fillText(text, -width, 0);
+      ctx.fillText(text, -width / 2, 0);
       // restore the context to its starting state
       ctx.restore();
     }
@@ -113,7 +117,6 @@
     var prevMouseX = innerWidth / 2;
     var alpha = 0;
     var debugText = '';
-    var heroSize = 18;
     // MOUSE MOVE LISTENER - Listens for mouse movement and determines the closest line point
     window.addEventListener('mousemove', function (e) {
       var deltaX = prevMouseX - e.pageX;
@@ -131,7 +134,7 @@
     }
 
     function simulate() {
-      // clear canvas frame
+      // clear canvas frame, draw every simulation frame
       ctx.clearRect(0, 0, innerWidth, innerHeight)
       drawText(debugText, 400, 400, 0)
       for (var key in state) {
@@ -150,11 +153,16 @@
           obj.vy = obj.vy + obj.gravity * fixedTimeDelta * 100
           //console.log('aft', obj.vy)
         }
+        // draw character
         drawText(obj.char, obj.x, obj.y, obj.angle)
       }
 
+      // debug hero position
+      //drawLine(state.hero.x, state.hero.y, state.hero.x + heroSize, state.hero.y + heroSize)
+
       //console.log('before', state.hero.angle, state.hero.y, state.hero.vy)
       if (state.hero.y > groundY) {
+        debug(state.hero.y)
         state.hero.y = groundY
         var vmag = Math.sqrt(state.hero.vx * state.hero.vx + state.hero.vy * state.hero.vy)
         //console.log(vmag)
@@ -166,7 +174,6 @@
         state.hero.vy = vy
         state.hero.vx = vx
       }
-      debug(state.hero.angle)
       //console.log(state.hero.angle, state.hero.y, state.hero.vy)
       if (state.hero.x < leftX) {
         state.hero.x = leftX
@@ -177,13 +184,17 @@
         state.hero.vx = -state.hero.vx
       }
 
-      drawLine(leftX - heroSize, groundY + heroSize, rightX, groundY + heroSize)
-      drawLine(leftX - heroSize, 0, leftX - heroSize, groundY + heroSize)
-      drawLine(rightX, 0, rightX, groundY + heroSize)
+      // Ground
+      drawLine(leftX - heroSize, groundY, rightX + heroSize, groundY)
+      // Left wall
+      drawLine(leftX - heroSize / 2, topY, leftX - heroSize / 2, groundY)
+      // Right wall
+      drawLine(rightX + heroSize / 2, topY, rightX + heroSize / 2, groundY)
     }
 
+
     var then = Date.now();
-    var fixedTimeDelta = 0.02;
+    var fixedTimeDelta = 0.01;
     var fixedTimeDeltaMs = fixedTimeDelta * 1000;
     var timeRemainderMs = 0.0;
     function gameStep() {
